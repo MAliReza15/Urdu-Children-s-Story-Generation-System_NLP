@@ -1,0 +1,18 @@
+[
+  {
+    "url": "https://www.bbc.com/urdu/articles/ckg9gg819yeo",
+    "error": "HTTPSConnectionPool(host='www.bbc.com', port=443): Max retries exceeded with url: /urdu/articles/ckg9gg819yeo (Caused by NameResolutionError(\"HTTPSConnection(host='www.bbc.com', port=443): Failed to resolve 'www.bbc.com' ([Errno 11001] getaddrinfo failed)\"))"
+  },
+  {
+    "url": "https://www.bbc.com/urdu/articles/cp343xq0y2lo",
+    "error": "HTTPSConnectionPool(host='www.bbc.com', port=443): Max retries exceeded with url: /urdu/articles/cp343xq0y2lo (Caused by NameResolutionError(\"HTTPSConnection(host='www.bbc.com', port=443): Failed to resolve 'www.bbc.com' ([Errno 11001] getaddrinfo failed)\"))"
+  },
+  {
+    "url": "https://www.bbc.com/urdu/articles/cm202vnvlmpo",
+    "error": "HTTPSConnectionPool(host='www.bbc.com', port=443): Max retries exceeded with url: /urdu/articles/cm202vnvlmpo (Caused by NameResolutionError(\"HTTPSConnection(host='www.bbc.com', port=443): Failed to resolve 'www.bbc.com' ([Errno 11001] getaddrinfo failed)\"))"
+  },
+  {
+    "url": "https://www.bbc.com/urdu/articles/cpq4rd2devxo",
+    "error": "HTTPSConnectionPool(host='www.bbc.com', port=443): Max retries exceeded with url: /urdu/articles/cpq4rd2devxo (Caused by NameResolutionError(\"HTTPSConnection(host='www.bbc.com', port=443): Failed to resolve 'www.bbc.com' ([Errno 11001] getaddrinfo failed)\"))"
+  }
+]
