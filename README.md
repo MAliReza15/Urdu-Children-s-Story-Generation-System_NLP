@@ -13,3 +13,6 @@ This project aims to collect and preprocess 400-500 high-quality Urdu stories fo
 1. Install dependencies: `pip install -r requirements.txt`
 2. Run scraper: `python scripts/run_scraper.py`
 3. Run preprocessing: `python scripts/run_preprocessing.py`
+
+# Urdu-Children-s-Story-Generation-System_NLP
+GEN-AI system that generates short Urdu stories for children.
