@@ -1,6 +1,8 @@
 import time
 import json
 import sys
+import random
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -14,7 +16,10 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # Base link
 URL = "https://www.urdupoint.com/kids/section/stories-page{}.html"
-N = 2  # Number of stories
+TARGET_NEW_STORIES = 500  # Number of NEW stories to find
+BATCH_SIZE = 20     # Process stories in batches of this size
+OUTPUT_FILE = 'urduStories.json'
+
 EOP = r'\p' # EOP Tag for now
 EOT = r'\e' # EOT Tag for now
 
@@ -32,11 +37,27 @@ wait = WebDriverWait(driver, 10)
 
 # ---------------- FUNCTIONS ----------------
 
-def getStoryLinks(minLinks):
-    collectedLinks = set()
+def load_existing_data(filepath):
+    """Loads existing stories and returns them as a list and a set of URLs."""
+    if not os.path.exists(filepath):
+        return [], set()
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            urls = {item['url'] for item in data if 'url' in item}
+            return data, urls
+    except Exception as e:
+        print(f"Error loading existing data: {e}")
+        return [], set()
+
+def getStoryLinks(target_new, existing_urls):
+    collected_new_links = set()
     pageNum = 1
     
-    while len(collectedLinks) < minLinks:
+    print(f"Scanning for {target_new} NEW stories (skipping {len(existing_urls)} existing)...")
+
+    while len(collected_new_links) < target_new:
         url = URL.format(pageNum)
         print(f'--- Scanning Page {pageNum}: {url} ---')
         
@@ -44,31 +65,39 @@ def getStoryLinks(minLinks):
             driver.get(url)
             # Wait for content to load
             wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'title_en')))
+            
             # Find all potential links
             elements = driver.find_elements(By.XPATH, "//p[contains(@class, 'title_en')]/ancestor::a")
-            count = len(collectedLinks)
+            
+            initial_count = len(collected_new_links)
+            
             for el in elements:
-                if len(collectedLinks) >= minLinks:
-                    break  
+                if len(collected_new_links) >= target_new:
+                    break
+                
                 href = el.get_attribute('href')
                 if href and 'category' not in href:
                     if 'stories' in href and 'riddles' not in href and 'lateefay' not in href:
-                        collectedLinks.add(href)
+                        if href not in existing_urls and href not in collected_new_links:
+                            collected_new_links.add(href)
             
-            found = len(collectedLinks) - count
-            print(f'   Found {found} new STORY links. Total: {len(collectedLinks)}/{minLinks}')
-            if found == 0:
-                print('   No new valid stories found on this page. Stopping.')
-                break
+            found_on_page = len(collected_new_links) - initial_count
+            print(f'   Found {found_on_page} NEW links. Total New: {len(collected_new_links)}/{target_new}')
+            
+            if found_on_page == 0 and len(elements) == 0:
+                 print('   No stories found on this page via XPath. Stopping scan.')
+                 break
+            if found_on_page == 0:
+                print('   (Only duplicates or invalid links found on this page)')
 
         except Exception as e:
             print(f'   Error on page {pageNum}: {e}')
             break
             
         pageNum += 1
-        time.sleep(1)
+        time.sleep(random.uniform(1, 2)) # Polite delay between pages
 
-    return list(collectedLinks)
+    return list(collected_new_links)
 
 
 def getStory(url):
@@ -105,7 +134,7 @@ def getStory(url):
     
 def reverseParagraphs(data):
     if not data:
-        return ''
+        return '', ''
     parts = data.split(EOP)
     if len(parts) > 0:
         author = parts[0].strip()
@@ -113,32 +142,70 @@ def reverseParagraphs(data):
     else:
         author = ""
         parts = []
-    reversed = parts[::-1]
-    return EOT + EOP.join(reversed), author
+    reversed_parts = parts[::-1]
+    return EOT + EOP.join(reversed_parts), author
+
+def save_data(data, filepath):
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print(f"   Saved {len(data)} total stories to {filepath}")
 
 # ---------------- MAIN ----------------
 def main():
     try:
-        links = getStoryLinks(N)
-        print(f'\nCollection Complete. Scraping content for {len(links)} stories...\n')
-        results = []
-        for i, link in enumerate(links):
-            print(f'[{i + 1}/{len(links)}] Scraping: {link}')
-            data = getStory(link)
-            if data and len(data['content']) > 20:
-                data['content'], data['author'] = reverseParagraphs(data['content'])
-                results.append(data)
-                try:
-                    title = data['title'].encode('ascii', 'ignore').decode('ascii')
-                except:
-                    title = 'Story'
-                print(f'   Saved: {title}...')
-            else:
-                print('   Skipped (Empty or Error)')            
-        with open('urduStories.json', 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
+        # 1. Load existing data
+        all_stories, existing_ids = load_existing_data(OUTPUT_FILE)
         
-        print(f'\nDone! Scraped {len(results)} stories.')
+        # 2. Find NEW links
+        new_links = getStoryLinks(TARGET_NEW_STORIES, existing_ids)
+        
+        if not new_links:
+            print("No new links found.")
+            return
+
+        print(f'\nCollection Complete. Starting Batch Scraping for {len(new_links)} new stories...\n')
+        
+        # 3. Batch Process
+        total_batches = (len(new_links) + BATCH_SIZE - 1) // BATCH_SIZE
+        
+        for batch_num in range(total_batches):
+            start_idx = batch_num * BATCH_SIZE
+            end_idx = min(start_idx + BATCH_SIZE, len(new_links))
+            batch_links = new_links[start_idx:end_idx]
+            
+            print(f'--- Processing Batch {batch_num + 1}/{total_batches} ({len(batch_links)} stories) ---')
+            
+            for i, link in enumerate(batch_links):
+                global_idx = start_idx + i + 1
+                print(f'[{global_idx}/{len(new_links)}] Scraping: {link}')
+                
+                data = getStory(link)
+                
+                if data and len(data['content']) > 20:
+                    data['content'], data['author'] = reverseParagraphs(data['content'])
+                    all_stories.append(data) # Add to main list
+                    
+                    try:
+                        title_safe = data['title'].encode('ascii', 'ignore').decode('ascii')
+                    except:
+                        title_safe = 'Story'
+                    print(f'   Scraped: {title_safe}...')
+                else:
+                    print('   Skipped (Empty or Error)')
+                
+                # Polite delay between items in a batch
+                s_time = random.uniform(2, 5)
+                time.sleep(s_time)
+
+            # Save progress after each batch
+            save_data(all_stories, OUTPUT_FILE)
+            
+            if batch_num < total_batches - 1:
+                sleep_time = random.uniform(30, 60)
+                print(f'   Batch complete. Sleeping for {sleep_time:.1f} seconds to avoid detection...')
+                time.sleep(sleep_time)
+        
+        print(f'\nDone! Scraped {len(all_stories)} total stories.')
 
     finally:
         driver.quit()
