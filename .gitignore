@@ -155,5 +155,4 @@ cython_debug/
 .vscode/
 
 # Custom
-urduStories.json
 Scraping/venv/
