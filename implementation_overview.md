@@ -187,7 +187,17 @@ Allows trigram, 5-gram, or higher models to work without code changes.
 
 ### Sampling Strategy (`utils/sampling.py`)
 
-Weighted random sampling selects tokens proportional to predicted probability, ensuring diversity instead of deterministic output.
+Implemented features:
+
+Weighted sampling (baseline)
+
+Temperature scaling — controls randomness and creativity
+
+Top-k sampling — restricts to most probable K tokens
+
+Top-p (nucleus) sampling — restricts to cumulative probability mass for coherence
+
+This ensures generated text is less noisy and more fluent while keeping diversity.
 
 ---
 
@@ -233,14 +243,14 @@ Start tokens are automatically adapted:
 * Grammatically noisy but structurally Urdu-like output
 * Expected due to small corpus size and limited vocabulary
 * Confirms pipeline works correctly
+* Much more coherent output due to temperature, top-k, and top-p sampling
+* Reduced nonsensical words and token sequences
 
 ---
 
 ## 10. Future Improvements
 
-* **Modeling:** Laplace/Add-k smoothing, Backoff models, Kneser–Ney smoothing
 * **Tokenization:** Larger BPE vocab (500–2000)
-* **Generation:** Temperature sampling, Top-k/nucleus sampling
 * **Architecture:** REST API backend, Web frontend model selector
 * **Long-Term:** Transformer-based Urdu LM
 
@@ -255,7 +265,7 @@ Start tokens are automatically adapted:
 | BPE Training          | ✅ Complete |
 | Tokenizer Integration | ✅ Complete |
 | Trigram Model         | ✅ Complete |
-| 5-gram Model          | ✅ Complete |
+| N-gram Model          | ✅ Complete |
 | Generic Generator     | ✅ Complete |
 | Model Factory         | ✅ Complete |
 | Frontend Integration  | ⏳ Planned  |
@@ -269,5 +279,3 @@ The project successfully implements a **fully modular Urdu statistical text gene
 The system is ready for:
 
 * Frontend integration
-* Advanced smoothing methods
-* Transition toward neural language modeling

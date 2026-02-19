@@ -1,6 +1,5 @@
-from utils.sampling import weighted_sample
-from config import MAX_GENERATION_LENGTH
-
+from utils.sampling import weighted_sample_with_temperature
+from config import MAX_GENERATION_LENGTH, TEMPERATURE, TOP_K
 
 class StoryGenerator:
 
@@ -16,14 +15,15 @@ class StoryGenerator:
     def sample_next(self, context):
         """
         context = last (n-1) tokens
+        Uses temperature and top-k sampling
         """
-
         probs = [
             self.model.probability(context, w)
             for w in self.vocab_ids
         ]
 
-        return weighted_sample(self.vocab_ids, probs)
+        # weighted sample with temperature and top-k
+        return weighted_sample_with_temperature(self.vocab_ids, probs, temperature=TEMPERATURE, top_k=TOP_K)
 
     # -------------------------------------------------------------
 
