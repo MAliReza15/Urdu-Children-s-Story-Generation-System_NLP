@@ -7,15 +7,20 @@ class StoryGenerator:
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
+
+        # vocabulary ids available for sampling
         self.vocab_ids = [int(i) for i in tokenizer.id_to_token.keys()]
 
     # -------------------------------------------------------------
 
-    def sample_next(self, w1, w2):
+    def sample_next(self, context):
+        """
+        context = last (n-1) tokens
+        """
 
         probs = [
-            self.model.probability(w1, w2, w3)
-            for w3 in self.vocab_ids
+            self.model.probability(context, w)
+            for w in self.vocab_ids
         ]
 
         return weighted_sample(self.vocab_ids, probs)
@@ -26,13 +31,17 @@ class StoryGenerator:
 
         generated = start_tokens[:]
 
+        required_context = self.model.n - 1
+
         while len(generated) < MAX_GENERATION_LENGTH:
 
-            w1, w2 = generated[-2], generated[-1]
-            nxt = self.sample_next(w1, w2)
+            # take last (n-1) tokens as context
+            context = generated[-required_context:]
 
+            nxt = self.sample_next(context)
             generated.append(nxt)
 
+            # stop when End Of Text generated
             if nxt == self.tokenizer.eot_id:
                 break
 
