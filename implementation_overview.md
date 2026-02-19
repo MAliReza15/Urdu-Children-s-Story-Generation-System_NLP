@@ -1,6 +1,6 @@
 # Urdu Story Generator — Implementation Overview (Phase I → Phase III)
 
-![Project Pipeline](./A_flowchart_infographic_illustrates_the_Urdu_Story.png)
+![alt text](image.png)
 
 ## 1. Project Overview
 
@@ -163,7 +163,7 @@ This enables future frontend integration without backend modification.
 ---
 
 ## 6. Story Generation Engine (`generation/generator.py`)
-![alt text](image.png)
+
 ### Generation Algorithm
 
 1. Start with initial context tokens.
